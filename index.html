@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WILLY AI — Chess Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black: #0d0d0d;
+      --white: #f7f5f0;
+      --cream: #ede9e0;
+      --mid: #8a8880;
+      --border: #d6d2c8;
+      --gold: #b8860b;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--white); color: var(--black); font-size: 16px; line-height: 1.6; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 4rem;
+      background: rgba(247,245,240,0.93); backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--black); text-decoration: none; }
+    .nav-logo span { color: var(--gold); }
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a { font-size: 0.875rem; font-weight: 500; color: var(--mid); text-decoration: none; letter-spacing: 0.04em; text-transform: uppercase; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--black); }
+    .nav-cta { background: var(--black) !important; color: var(--white) !important; padding: 0.55rem 1.25rem; border-radius: 4px; }
+    .nav-cta:hover { background: #333 !important; }
+
+    .hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding: 8rem 4rem 5rem; position: relative; overflow: hidden;
+    }
+    .hero-bg-board {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 52%;
+      display: grid; grid-template-columns: repeat(8,1fr); grid-template-rows: repeat(8,1fr);
+      opacity: 0.055; pointer-events: none;
+    }
+    .hero-bg-board .c { width: 100%; height: 100%; }
+    .hero-bg-board .c.d { background: var(--black); }
+    .hero-content { max-width: 600px; position: relative; z-index: 2; }
+    .hero-eyebrow {
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;
+    }
+    .hero-eyebrow::before { content:''; display:block; width:32px; height:1px; background:var(--gold); }
+    .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(3rem,6vw,5.5rem); line-height: 1.05; margin-bottom: 1.75rem; }
+    .hero h1 em { font-style: italic; color: var(--gold); }
+    .hero-desc { font-size: 1.1rem; color: #4a4a48; max-width: 480px; margin-bottom: 2.5rem; line-height: 1.8; }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--black); color: var(--white); padding: 0.9rem 2rem;
+      border-radius: 4px; text-decoration: none; font-weight: 500; font-size: 0.95rem;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-primary:hover { background: #222; transform: translateY(-1px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: transparent; color: var(--black); padding: 0.9rem 2rem;
+      border-radius: 4px; text-decoration: none; font-weight: 500; font-size: 0.95rem;
+      border: 1px solid var(--border); transition: border-color 0.2s, transform 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--black); transform: translateY(-1px); }
+    .hero-stats { margin-top: 4rem; display: flex; gap: 3rem; padding-top: 2.5rem; border-top: 1px solid var(--border); }
+    .stat-num { font-family: 'DM Serif Display', serif; font-size: 2.25rem; line-height: 1; }
+    .stat-label { font-size: 0.78rem; color: var(--mid); margin-top: 0.3rem; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    section { padding: 6rem 4rem; }
+    .section-tag { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+    .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(2rem,4vw,2.75rem); line-height: 1.1; margin-bottom: 1.5rem; }
+
+    .features-section { background: var(--cream); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; margin-top: 3rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .feature-card { background: var(--white); padding: 2.25rem 2rem; border-right: 1px solid var(--border); transition: background 0.2s; }
+    .feature-card:last-child { border-right: none; }
+    .feature-card:hover { background: #f0ece3; }
+    .feature-icon { font-size: 1.6rem; margin-bottom: 1rem; }
+    .feature-name { font-weight: 600; margin-bottom: 0.4rem; }
+    .feature-text { font-size: 0.9rem; color: var(--mid); line-height: 1.65; }
+
+    .puzzle-section { border-bottom: 1px solid var(--border); }
+    .puzzle-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+    .puzzle-desc { font-size: 1rem; color: #555; line-height: 1.8; margin-bottom: 2rem; }
+
+    .chess-puzzle { border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; max-width: 340px; user-select: none; }
+    .puzzle-top { padding: 0.75rem 1rem; background: var(--cream); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .puzzle-top-label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mid); }
+    .puzzle-turn { font-size: 0.78rem; font-weight: 500; color: var(--black); background: var(--white); border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 999px; }
+    .board { display: grid; grid-template-columns: repeat(8,1fr); }
+    .sq { width: 100%; padding-top: 100%; position: relative; cursor: pointer; }
+    .sq.light { background: #f0d9b5; }
+    .sq.dark  { background: #b58863; }
+    .sq.selected { outline: 3px solid rgba(246,246,105,0.85); outline-offset: -3px; }
+    .sq.correct-flash { animation: flashGreen 0.5s ease; }
+    @keyframes flashGreen { 0%,100%{} 50%{background:#6aaa64;} }
+    .piece { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: clamp(1rem,3.2vw,1.5rem); pointer-events: none; line-height: 1; }
+    .puzzle-bottom { padding: 0.75rem 1rem; background: var(--cream); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .puzzle-msg { font-size: 0.85rem; color: var(--mid); }
+    .puzzle-msg.good { color: #2a7a2a; font-weight: 500; }
+    .puzzle-msg.bad  { color: #a33; font-weight: 500; }
+    .puzzle-reset { font-size: 0.8rem; background: none; border: 1px solid var(--border); border-radius: 4px; padding: 0.3rem 0.75rem; cursor: pointer; color: var(--black); white-space: nowrap; transition: border-color 0.15s; }
+    .puzzle-reset:hover { border-color: var(--black); }
+
+    .dark-section { background: var(--black); color: var(--white); }
+    .dark-section .section-title { color: var(--white); }
+    .dark-section .section-tag { color: var(--gold); }
+    .quote-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 2px; margin-top: 3rem; }
+    .quote-card { background: #161616; padding: 2rem; transition: background 0.2s; }
+    .quote-card:hover { background: #1e1e1e; }
+    .quote-text { font-family: 'DM Serif Display', serif; font-size: 1.25rem; line-height: 1.5; color: #ddd; margin-bottom: 1rem; font-style: italic; }
+    .quote-attr { font-size: 0.8rem; color: #666; }
+    .quote-attr span { color: var(--gold); }
+
+    footer { border-top: 1px solid var(--border); padding: 2.5rem 4rem; display: flex; justify-content: space-between; align-items: center; }
+    .footer-logo { font-family: 'DM Serif Display', serif; font-size: 1.1rem; }
+    .footer-logo span { color: var(--gold); }
+    .footer-links { display: flex; gap: 2rem; list-style: none; }
+    .footer-links a { font-size: 0.85rem; color: var(--mid); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--black); }
+    .footer-copy { font-size: 0.8rem; color: var(--mid); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    .hero-content > * { animation: fadeUp 0.55s ease both; }
+    .hero-eyebrow { animation-delay: 0.05s; }
+    .hero h1 { animation-delay: 0.15s; }
+    .hero-desc { animation-delay: 0.22s; }
+    .hero-actions { animation-delay: 0.3s; }
+    .hero-stats { animation-delay: 0.38s; }
+
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { display: none; }
+      section { padding: 4rem 1.5rem; }
+      .hero { padding: 7rem 1.5rem 4rem; }
+      .features-grid, .puzzle-wrap, .quote-grid { grid-template-columns: 1fr; }
+      .feature-card { border-right: none; border-bottom: 1px solid var(--border); }
+      footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">WILLY <span>AI</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#puzzle">Puzzle</a></li>
+    <li><a href="https://github.com/YOUR_USERNAME/YOUR_REPO" target="_blank" class="nav-cta">GitHub ↗</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg-board" id="bgBoard"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">Open-source chess engine</p>
+    <h1>Meet <em>WILLY AI.</em><br>Play smarter chess.</h1>
+    <p class="hero-desc">A powerful open-source chess engine that adapts to every skill level. Fast, precise, and always ready for the next move.</p>
+    <div class="hero-actions">
+      <a href="https://github.com/YOUR_USERNAME/YOUR_REPO/releases" target="_blank" class="btn-primary">♟ Download</a>
+      <a href="https://github.com/YOUR_USERNAME/YOUR_REPO" target="_blank" class="btn-secondary">View Source ↗</a>
+    </div>
+    <div class="hero-stats">
+      <div><div class="stat-num">2400+</div><div class="stat-label">Estimated ELO</div></div>
+      <div><div class="stat-num">5</div><div class="stat-label">Difficulty levels</div></div>
+      <div><div class="stat-num">100%</div><div class="stat-label">Open source</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="features-section" id="features">
+  <p class="section-tag">Under the hood</p>
+  <h2 class="section-title">Built to think. Built to win.</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">♟</div>
+      <div class="feature-name">Alpha-Beta Search</div>
+      <div class="feature-text">Evaluates millions of positions per second by intelligently cutting branches that can't affect the outcome.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-name">Positional Intelligence</div>
+      <div class="feature-text">Beyond material — WILLY AI reads piece activity, king safety, pawn structure, and long-term imbalances.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📖</div>
+      <div class="feature-name">Opening Book</div>
+      <div class="feature-text">Hundreds of opening lines built in, from classical systems to sharp modern variations, all played confidently.</div>
+    </div>
+  </div>
+</section>
+
+<section class="puzzle-section" id="puzzle">
+  <div class="puzzle-wrap">
+    <div>
+      <p class="section-tag">Try it out</p>
+      <h2 class="section-title">Solve a quick puzzle</h2>
+      <p class="puzzle-desc">White to move and win material. Click a white piece, then click where to move it. Can you find the move WILLY AI plays instantly?</p>
+    </div>
+    <div>
+      <div class="chess-puzzle">
+        <div class="puzzle-top">
+          <span class="puzzle-top-label">White to move</span>
+          <span class="puzzle-turn" id="turnLabel">♙ Your turn</span>
+        </div>
+        <div class="board" id="board"></div>
+        <div class="puzzle-bottom">
+          <span class="puzzle-msg" id="puzzleMsg">Find the winning move.</span>
+          <button class="puzzle-reset" id="resetBtn">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dark-section">
+  <p class="section-tag">Chess wisdom</p>
+  <h2 class="section-title">The game speaks for itself.</h2>
+  <div class="quote-grid">
+    <div class="quote-card">
+      <div class="quote-text">"Chess is the art of analysis."</div>
+      <div class="quote-attr">— <span>Mikhail Botvinnik</span></div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"Every chess master was once a beginner."</div>
+      <div class="quote-attr">— <span>Irving Chernev</span></div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"Chess is life in miniature."</div>
+      <div class="quote-attr">— <span>Garry Kasparov</span></div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"When you see a good move, look for a better one."</div>
+      <div class="quote-attr">— <span>Emanuel Lasker</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">WILLY <span>AI</span></div>
+  <ul class="footer-links">
+    <li><a href="https://github.com/YOUR_USERNAME/YOUR_REPO" target="_blank">GitHub</a></li>
+    <li><a href="https://github.com/YOUR_USERNAME/YOUR_REPO/releases" target="_blank">Releases</a></li>
+    <li><a href="https://github.com/YOUR_USERNAME/YOUR_REPO/blob/main/LICENSE" target="_blank">License</a></li>
+  </ul>
+  <div class="footer-copy">Open source. Built with ♟</div>
+</footer>
+
+<script>
+// BG checkerboard
+(function() {
+  var bg = document.getElementById('bgBoard');
+  for (var r = 0; r < 8; r++)
+    for (var c = 0; c < 8; c++) {
+      var d = document.createElement('div');
+      d.className = 'c' + ((r + c) % 2 === 0 ? ' d' : '');
+      bg.appendChild(d);
+    }
+})();
+
+// PUZZLE — back rank mate threat, Qd8+ wins the rook on f8
+// Layout (row 0 = rank 8, col 0 = file a):
+// bK=e8(idx4), bR=f8(idx5), bPawns=e7(12),f7(13),g7(14),h7(15)
+// wQ=d1(idx59), wR=e1(idx60), wK=c1(idx58)
+// Winning move: wQ d1->d8 (idx59->idx3) — fork / wins rook
+var PIECES = { wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙', bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟' };
+var START = { 4:'bK', 5:'bR', 12:'bP', 13:'bP', 14:'bP', 15:'bP', 58:'wK', 59:'wQ', 60:'wR' };
+var SOL_FROM = 59, SOL_TO = 3;
+
+var pos, selected, solved;
+
+function reset() {
+  pos = Object.assign({}, START);
+  selected = null; solved = false;
+  render();
+  setMsg('Find the winning move.', '');
+  document.getElementById('turnLabel').textContent = '♙ Your turn';
+}
+
+function setMsg(text, cls) {
+  var el = document.getElementById('puzzleMsg');
+  el.textContent = text; el.className = 'puzzle-msg' + (cls ? ' ' + cls : '');
+}
+
+function render() {
+  var board = document.getElementById('board');
+  board.innerHTML = '';
+  for (var i = 0; i < 64; i++) {
+    var r = Math.floor(i/8), c = i%8;
+    var sq = document.createElement('div');
+    sq.className = 'sq ' + ((r+c)%2===0 ? 'light':'dark');
+    if (selected===i) sq.classList.add('selected');
+    sq.dataset.idx = i;
+    if (pos[i]) {
+      var p = document.createElement('div');
+      p.className = 'piece';
+      p.textContent = PIECES[pos[i]];
+      p.style.color = pos[i][0]==='w' ? '#fff' : '#111';
+      p.style.textShadow = pos[i][0]==='w' ? '0 1px 3px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.15)';
+      sq.appendChild(p);
+    }
+    sq.addEventListener('click', onClick);
+    board.appendChild(sq);
+  }
+}
+
+function onClick() {
+  if (solved) return;
+  var idx = parseInt(this.dataset.idx);
+  if (selected === null) {
+    if (pos[idx] && pos[idx][0]==='w') { selected = idx; render(); }
+    return;
+  }
+  if (idx === selected) { selected = null; render(); return; }
+  if (pos[idx] && pos[idx][0]==='w') { selected = idx; render(); return; }
+  if (selected===SOL_FROM && idx===SOL_TO) {
+    pos[idx] = pos[selected]; delete pos[selected];
+    selected = null; solved = true; render();
+    setMsg('✓ Correct! Qd8+ wins the rook.', 'good');
+    document.getElementById('turnLabel').textContent = '✓ Solved!';
+  } else {
+    setMsg('Not quite — try again.', 'bad');
+    selected = null; render();
+  }
+}
+
+document.getElementById('resetBtn').addEventListener('click', reset);
+reset();
+</script>
+</body>
+</html>
